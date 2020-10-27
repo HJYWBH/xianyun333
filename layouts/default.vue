@@ -1,9 +1,22 @@
 <template>
   <div>
+    <!-- 头部组件 -->
+    <Header />
+    <!-- 底部组件 -->
+    <Footer />
     <Nuxt />
   </div>
 </template>
-
+<script>
+import Header from "@/components/header"
+import Footer from "@/components/footer"
+export default {
+  components:{
+    Header,
+    Footer
+  }
+}
+</script>
 <style>
 html {
   font-family:

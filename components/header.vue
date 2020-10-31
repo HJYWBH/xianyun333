@@ -17,18 +17,33 @@
       <!-- 登录信息 -->
       <div class="login">
         <!-- 登录前 -->
-        <nuxt-link to="/user/login" v-if="false">登录/注册</nuxt-link>
-        <!-- 登录后 -->
-        <el-dropdown class="eldro">
-          <span class="el-dropdown-link">
-            <img src="http://157.122.54.189:9095/assets/images/avatar.jpg" alt="">
-            螺蛳粉<i class="el-icon-arrow-down el-icon--right"></i>
-          </span>
-          <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item>个人中心</el-dropdown-item>
-            <el-dropdown-item>退出</el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
+        <div v-if="!$store.state.user.userInFo.token">
+          <nuxt-link to="/user/login">登录 / 注册</nuxt-link>
+        </div>
+
+        <div v-else>
+          <el-dropdown>
+            <span class="el-dropdown-link">
+              <!-- 头像 -->
+              <img
+                :src="
+                  $axios.defaults.baseURL +
+                  $store.state.user.userInFo.user.defaultAvatar
+                "
+                alt=""
+              />
+              <!-- 昵称 -->
+              {{ $store.state.user.userInFo.user.nickname }}
+              <i class="el-icon-arrow-down el-icon--right"></i>
+            </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item>个人中心</el-dropdown-item>
+              <el-dropdown-item @click.native="handleloginout">
+                退出
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+        </div>
       </div>
     </el-row>
   </div>
@@ -36,7 +51,15 @@
 
 <script>
 export default {
-  methods: {},
+  methods: {
+    handleloginout() {
+      this.$store.commit("user/loginout");
+      this.$message({
+        message: "退出成功",
+        type: "success",
+      });
+    },
+  },
 };
 </script>
 
@@ -62,6 +85,7 @@ export default {
       display: flex;
       flex: 1;
       .nvas {
+        // box-sizing: border-box;
         padding: 0 20px;
         &:hover {
           color: #409eff;
@@ -73,20 +97,20 @@ export default {
         color: #fff !important;
       }
     }
-    .login{
-        img{
-          height: 36px;
-          width: 36px;
-          vertical-align: middle;
-          border: 2px solid #fff;
-          border-radius: 50%;
+    .login {
+      img {
+        height: 36px;
+        width: 36px;
+        vertical-align: middle;
+        border: 2px solid #fff;
+        border-radius: 50%;
+      }
+      .el-dropdown-link {
+        &:hover img {
+          border-color: #409eff;
         }
-        .el-dropdown-link{
-          &:hover img{
-            border-color: #409eff;
-          }
-          cursor: pointer;
-        }
+        cursor: pointer;
+      }
     }
   }
 }

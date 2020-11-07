@@ -184,6 +184,9 @@ export default {
                 }
            })
 
+            let airs = JSON.parse(localStorage.getItem("airs") || `[]`)
+            airs.unshift(this.searchForm)
+            localStorage.setItem("airs",JSON.stringify(airs))
             this.$router.push({
                 path:'/air/flights',
                 query:this.searchForm

@@ -33,5 +33,20 @@ export const actions = {
             commit("setUserInfo",res.data)
             this.$router.go(-1)
         })
+    },
+
+    captcha( store , contactPhone ){
+       return this.$axios({
+            url: "/captchas",
+            method: "POST",
+            data: {
+              tel: contactPhone,
+            },
+          }).then((res) => {
+            //   console.log(res.data);
+            const { code } = res.data;
+            return code
+          });
+    
     }
 }

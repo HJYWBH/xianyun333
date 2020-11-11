@@ -3,10 +3,10 @@
         <div class="air-column">
             <h2>剩机人</h2>
             <el-form class="member-info">
-                <div class="member-info-item" >
+                <div class="member-info-item" v-for="(item,index) in users" :key="index">
 
                     <el-form-item label="乘机人类型">
-                        <el-input placeholder="姓名" class="input-with-select">
+                        <el-input placeholder="姓名" class="input-with-select" v-model="item.username">
                             <el-select 
                             slot="prepend" 
                             value="1" 
@@ -17,8 +17,8 @@
                     </el-form-item>
 
                     <el-form-item label="证件类型">
-                        <el-input 
-                        placeholder="证件号码"  class="input-with-select">
+                        <el-input type="number"
+                        placeholder="证件号码"  class="input-with-select" v-model="item.id">
                             <el-select 
                             slot="prepend" 
                             value="1"           
@@ -28,7 +28,7 @@
                         </el-input>
                     </el-form-item>
 
-                    <span class="delete-user" @click="handleDeleteUser()">-</span>
+                    <span class="delete-user" @click="handleDeleteUser(index)">-</span>
                 </div>
             </el-form>
 
@@ -38,9 +38,11 @@
         <div class="air-column">
             <h2>保险</h2>
             <div>
-                <div class="insurance-item">
+                <div class="insurance-item"
+                v-for="(item,index) in infoData.insurances" :key="index">
                     <el-checkbox 
-                    label="航空意外险：￥30/份×1  最高赔付260万" 
+                    :label="`${item.type}：￥${item.price}/份×1  最高赔付${item.compensation}元`" 
+                    @change="changeInsurances(item)"
                     border>
                     </el-checkbox> 
                 </div>
@@ -52,11 +54,11 @@
             <div class="contact">
                 <el-form label-width="60px">
                     <el-form-item label="姓名">
-                        <el-input></el-input>
+                        <el-input v-model="contactName"></el-input>
                     </el-form-item>
 
                     <el-form-item label="手机">
-                        <el-input placeholder="请输入内容">
+                        <el-input placeholder="请输入内容" v-model="contactPhone">
                             <template slot="append">
                             <el-button @click="handleSendCaptcha">发送验证码</el-button>
                             </template>
@@ -64,36 +66,172 @@
                     </el-form-item>
 
                     <el-form-item label="验证码">
-                        <el-input></el-input>
+                        <el-input v-model="captcha"></el-input>
                     </el-form-item>
                 </el-form>   
                 <el-button type="warning" class="submit" @click="handleSubmit">提交订单</el-button>
             </div>
         </div>
+        <input type="hidden" :value="allPrice"/>
     </div>
 </template>
 
 <script>
 export default {
+    data(){
+        return{
+            users:[
+                { username:'',id:'' }
+            ],
+            insurances:[],
+            contactName:'',
+            contactPhone:'',
+            invoice:false,
+            seat_xid:'',
+            air:'',
+            captcha:'',
+            infoData:{
+                insurances:[]
+            }
+        }
+    },
+    computed: {
+        allPrice(){
+            let prices = 0
+            if(!this.infoData.airport_tax_audlet) return 0;
+            prices+=this.infoData.seat_infos.org_settle_price
+
+            prices+=this.infoData.airport_tax_audlet
+
+            prices += this.insurances.length * 30
+
+            prices*=this.users.length
+
+            this.$store.commit("air/setallPrice",prices)
+            console.log(prices);
+
+        }
+    },
+    mounted () {
+        let { id,seat_xid } = this.$route.query
+       this.$axios({
+           url:`/airs/${id}`,
+           params:{
+               seat_xid
+           }
+       }).then((res)=>{
+        //    console.log(res.data);
+            this.infoData = res.data
+            this.$store.commit("air/setInfoData",this.infoData)
+       })
+    },
     methods: {
+        // 总价
+        
         // 添加乘机人
         handleAddUsers(){
-            
+            this.users.push({
+                username:'',id:''
+            })
         },
-        
+        // 选择保险
+        changeInsurances(item){
+            let index = this.insurances.indexOf(item.id)
+            if( index > -1){
+                this.insurances.splice(index,1)
+            }else{
+                this.insurances.push(item.id)
+            }
+            
+            console.log(this.insurances.length);
+        },
         // 移除乘机人
-        handleDeleteUse(){
-
+        handleDeleteUser(index){
+            this.users.splice(index,1)
         },
         
         // 发送手机验证码
         handleSendCaptcha(){
-            
+            if(!this.contactPhone){
+              this.$confirm('手机号码不能为空', '提示', {
+              confirmButtonText: '确定',
+              showCancelButton: false,
+              type: 'warning'
+            })
+            return;
+        }
+
+            if(this.contactPhone.length !== 11){
+                this.$confirm('手机号码格式错误', '提示', {
+                    confirmButtonText: '确定',
+                    showCancelButton: false,
+                    type: 'warning'
+                })
+                return;
+            }
+
+
+            this.$store.dispatch("user/captcha",this.contactPhone).then((code)=>{
+                this.$confirm(`验证码是${code}`, "提示", {
+                   confirmButtonText: "确定",
+                   showCancelButton: false,
+                   type: "warning",
+               });
+            })
         },
 
         // 提交订单
         handleSubmit(){
-            
+            let data = {
+                users:this.users,
+                insurances:this.insurances,
+                contactName:this.contactName,
+                contactPhone:this.contactPhone,
+                invoice:this.invoice,
+                seat_xid:this.$route.query.seat_xid,
+                air:this.$route.query.id,
+                captcha:this.captcha
+            }
+
+            let rules = {
+                 users: {
+                    value: this.users[0].username && this.users[0].id,
+                    message: "乘机人不能为空"
+                },
+                contactName: {
+                    value: this.contactName,
+                    message: "请输入联系人"
+                },
+                contactPhone: {
+                    value: this.contactPhone,
+                    message: "请输入手机号码"
+                },
+                captcha: {
+                    value: this.captcha,
+                    message: "请输入验证码"
+                }
+            }
+            let valid = true
+
+            Object.keys(rules).forEach((v)=>{
+                if(!valid) return
+                if(!rules[v].value){
+                    valid=false
+                    this.$message.warning(rules[v].message) 
+                }
+            })
+            if(!valid) return;
+
+            this.$axios({
+                url:"/airorders",
+                method:"POST",
+                data,
+                headers:{
+                    Authorization:`Bearer ${this.$store.state.user.userInFo.token}`
+                }
+            }).then((res)=>{
+                console.log(res.data);
+            })
         }
     }
 }

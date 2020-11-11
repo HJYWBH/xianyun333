@@ -96,20 +96,29 @@ export default {
         return;
       }
 
-      this.$axios({
-        url: "/captchas",
-        method: "post",
-        data: {
-          tel: this.form.username,
-        },
-      }).then((res) => {
-        const { code } = res.data;
-        this.$confirm(`验证码是${code}`, "提示", {
-          confirmButtonText: "确定",
-          showCancelButton: false,
-          type: "warning",
-        });
-      });
+
+      this.$store.dispatch("user/captcha",this.form.username).then((code)=>{
+          this.$confirm(`验证码是${code}`, "提示", {
+              confirmButtonText: "确定",
+              showCancelButton: false,
+              type: "warning",
+            });
+      })
+
+      // this.$axios({
+      //   url: "/captchas",
+      //   method: "post",
+      //   data: {
+      //     tel: this.form.username,
+      //   },
+      // }).then((res) => {
+      //   const { code } = res.data;
+      //   this.$confirm(`验证码是${code}`, "提示", {
+      //     confirmButtonText: "确定",
+      //     showCancelButton: false,
+      //     type: "warning",
+      //   });
+      // });
     },
 
     // 注册
